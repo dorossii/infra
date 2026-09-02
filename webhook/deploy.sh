@@ -12,7 +12,11 @@ cd /infra
 
 git pull --ff-only
 
-COMPOSE="docker compose --project-directory ${HOST_INFRA_DIR} -f ${HOST_INFRA_DIR}/docker-compose.yaml"
+# -f には webhook コンテナ内のパス(/infra/docker-compose.yaml)を渡す
+# (docker compose CLI プロセス自体がこのコンテナ内で動いているため)。
+# --project-directory にはホスト上の絶対パスを渡す
+# (bind mount の相対パス解決は Docker daemon がホスト側で行うため)。
+COMPOSE="docker compose --project-directory ${HOST_INFRA_DIR} -f /infra/docker-compose.yaml"
 
 $COMPOSE pull
 $COMPOSE up -d --remove-orphans

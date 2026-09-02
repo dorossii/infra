@@ -27,14 +27,29 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 実行中のプロセスが強制終了して他サービスの更新が中断されてしまうため。
 
 `webhook` コンテナは docker.sock をマウントしてホストの docker compose を
-操作しているが、bind mount の相対パス (`./nginx/keys` など) は
-**webhook を呼び出したプロセスの視点ではなく、常にホスト上のパスとして**
-解決する必要がある。そのため `deploy.sh` では `HOST_INFRA_DIR`
-(ホスト上の infra リポジトリの絶対パス) を明示し、
-`docker compose --project-directory ${HOST_INFRA_DIR} -f ${HOST_INFRA_DIR}/docker-compose.yaml`
-の形で実行している。これを省略すると bind mount がコンテナ内パス
-(`/infra/...`) をホストパスと誤認し、ホスト上に存在しない空ディレクトリが
-新規作成されて nginx の設定・証明書が読み込めなくなる。
+操作しているが、パスの扱いに 2 つの罠がある。
+
+1. **bind mount の相対パス解決はホスト側 (Docker daemon) が行う。**
+   `./nginx/keys` のような相対パスは、docker compose を実行した
+   カレントディレクトリ (`--project-directory`) を基準に、
+   **ホスト上のパスとして** 解決される。ここにコンテナ内パス
+   (`/infra`) を渡すと、ホスト上に存在しない空ディレクトリが
+   新規作成されて nginx の設定・証明書が読み込めなくなる。
+2. **`-f` (compose ファイル自体の読み込み) は docker compose CLI
+   プロセスの視点で行われる。** この CLI は webhook コンテナ内で
+   動いているので、`-f` にはコンテナ内パス (`/infra/docker-compose.yaml`)
+   を渡す必要がある。ここにホストパスを渡すと
+   `stat: no such file or directory` で失敗する。
+
+そのため `deploy.sh` では `HOST_INFRA_DIR` (ホスト上の infra
+リポジトリの絶対パス) を明示し、
+
+```
+docker compose --project-directory ${HOST_INFRA_DIR} -f /infra/docker-compose.yaml
+```
+
+という組み合わせで実行している
+(`--project-directory` はホストパス、`-f` はコンテナ内パス)。
 
 ## セットアップ
 
