@@ -1,0 +1,18 @@
+[
+  {
+    "id": "deploy",
+    "execute-command": "/scripts/deploy.sh",
+    "command-working-directory": "/scripts",
+    "response-message": "deploy triggered",
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "{{ getenv \"DEPLOY_SECRET\" }}",
+        "parameter": {
+          "source": "header",
+          "name": "X-Deploy-Secret"
+        }
+      }
+    }
+  }
+]

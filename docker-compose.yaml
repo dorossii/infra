@@ -50,6 +50,36 @@ services:
         - ./config/auth.env
     command: ["/auth","migrate","-r"]
 
+  webhook:
+    build:
+      context: ./webhook
+    hostname: webhook
+    restart: always
+    env_file:
+      - path: ./config/webhook.env
+        required: false
+    volumes:
+      - ./webhook/hooks.json:/etc/webhook/hooks.json:ro
+      - ./webhook/deploy.sh:/scripts/deploy.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/infra
+    command:
+      - -hooks=/etc/webhook/hooks.json
+      - -port=9000
+      - -verbose
+      - -hotreload
+
+  cloudflared:
+    hostname: cloudflared
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --no-autoupdate run
+    env_file:
+      - path: ./config/cloudflared.env
+        required: false
+    depends_on:
+      - webhook
+
   mysql:
     hostname: db
     image: mysql

@@ -1,0 +1,13 @@
+FROM alpine:3.20
+
+ARG WEBHOOK_VERSION=2.8.2
+
+RUN apk add --no-cache git docker-cli docker-cli-compose curl \
+    && curl -fsSL -o /tmp/webhook.tar.gz \
+        "https://github.com/adnanh/webhook/releases/download/${WEBHOOK_VERSION}/webhook-linux-amd64.tar.gz" \
+    && tar -xzf /tmp/webhook.tar.gz -C /tmp \
+    && mv /tmp/webhook-linux-amd64/webhook /usr/local/bin/webhook \
+    && rm -rf /tmp/webhook.tar.gz /tmp/webhook-linux-amd64 \
+    && apk del curl
+
+ENTRYPOINT ["webhook"]

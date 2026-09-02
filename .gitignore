@@ -1,5 +1,7 @@
 config/auth.env
 config/app.env
+config/webhook.env
+config/cloudflared.env
 nginx/keys/
 openssl/jwtKeys/
 auth/icons/
