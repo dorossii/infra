@@ -55,6 +55,8 @@ services:
       context: ./webhook
     hostname: webhook
     restart: always
+    ports:
+      - 127.0.0.1:9000:9000
     env_file:
       - path: ./config/webhook.env
         required: false
@@ -69,17 +71,6 @@ services:
       - -verbose
       - -hotreload
       - -template
-
-  cloudflared:
-    hostname: cloudflared
-    image: cloudflare/cloudflared:latest
-    restart: always
-    command: tunnel --no-autoupdate run
-    env_file:
-      - path: ./config/cloudflared.env
-        required: false
-    depends_on:
-      - webhook
 
   mysql:
     hostname: db
