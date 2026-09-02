@@ -68,6 +68,7 @@ services:
       - -port=9000
       - -verbose
       - -hotreload
+      - -template
 
   cloudflared:
     hostname: cloudflared
