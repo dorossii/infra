@@ -7,7 +7,7 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 
 1. backend の `release.yml` がイメージを build & push
 2. infra リポジトリの `docker-compose.yaml` のイメージタグを書き換えて push
-3. Cloudflare Tunnel (サーバー上の既存 cloudflared) 経由で `webhook` コンテナに
+3. Cloudflare Tunnel (別サーバーの既存 cloudflared) 経由で `webhook` コンテナに
    HTTPS で通知
 4. `webhook` コンテナが `deploy.sh` を実行し、サーバー上で
    `git pull && docker compose pull && docker compose up -d` を行う
@@ -19,6 +19,12 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 シークレット (`X-Deploy-Secret` ヘッダー) による認証は必須なので、
 ポート自体がネットワーク内に開いていても deploy.sh は正しいシークレットが
 無い限り実行されない。
+
+`webhook` はメインの `docker-compose.yaml` (プロジェクト名 `dorossii-backend`)
+とは別に、`webhook/docker-compose.yaml` (プロジェクト名 `dorossii-webhook`) で
+独立して動かしている。同じ compose プロジェクトに入れると、deploy.sh が
+`docker compose up -d` を実行した際に webhook 自身も再作成対象になり、
+実行中のプロセスが強制終了して他サービスの更新が中断されてしまうため。
 
 ## セットアップ
 
@@ -43,7 +49,8 @@ DEPLOY_SECRET=<十分に長いランダム文字列>
 ### 3. 起動
 
 ```
-docker compose up -d webhook
+cd webhook
+docker compose up -d
 ```
 
 ### 4. 動作確認

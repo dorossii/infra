@@ -1,0 +1,24 @@
+name: dorossii-webhook
+
+services:
+  webhook:
+    build:
+      context: .
+    hostname: webhook
+    restart: always
+    ports:
+      - 0.0.0.0:9000:9000
+    env_file:
+      - path: ../config/webhook.env
+        required: false
+    volumes:
+      - ./hooks.json:/etc/webhook/hooks.json:ro
+      - ./deploy.sh:/scripts/deploy.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ..:/infra
+    command:
+      - -hooks=/etc/webhook/hooks.json
+      - -port=9000
+      - -verbose
+      - -hotreload
+      - -template
