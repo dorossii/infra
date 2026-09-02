@@ -10,7 +10,7 @@ services:
       - 0.0.0.0:9000:9000
     env_file:
       - path: ../config/webhook.env
-        required: false
+        required: true
     volumes:
       - ./hooks.json:/etc/webhook/hooks.json:ro
       - ./deploy.sh:/scripts/deploy.sh:ro

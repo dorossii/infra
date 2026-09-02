@@ -26,6 +26,16 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 `docker compose up -d` を実行した際に webhook 自身も再作成対象になり、
 実行中のプロセスが強制終了して他サービスの更新が中断されてしまうため。
 
+`webhook` コンテナは docker.sock をマウントしてホストの docker compose を
+操作しているが、bind mount の相対パス (`./nginx/keys` など) は
+**webhook を呼び出したプロセスの視点ではなく、常にホスト上のパスとして**
+解決する必要がある。そのため `deploy.sh` では `HOST_INFRA_DIR`
+(ホスト上の infra リポジトリの絶対パス) を明示し、
+`docker compose --project-directory ${HOST_INFRA_DIR} -f ${HOST_INFRA_DIR}/docker-compose.yaml`
+の形で実行している。これを省略すると bind mount がコンテナ内パス
+(`/infra/...`) をホストパスと誤認し、ホスト上に存在しない空ディレクトリが
+新規作成されて nginx の設定・証明書が読み込めなくなる。
+
 ## セットアップ
 
 ### 1. 既存 Cloudflare Tunnel に Public Hostname を追加
@@ -41,10 +51,11 @@ Cloudflare Zero Trust ダッシュボード (Networks > Tunnels) で、
 
 ```
 DEPLOY_SECRET=<十分に長いランダム文字列>
+HOST_INFRA_DIR=<ホスト上の infra リポジトリの絶対パス (例: /root/dorossii/infra)>
 ```
 
-この値は GitHub 側 (backend リポジトリ) の Secrets `DEPLOY_WEBHOOK_SECRET` にも
-同じ値を登録する。
+`DEPLOY_SECRET` は GitHub 側 (backend リポジトリ) の Secrets
+`DEPLOY_WEBHOOK_SECRET` にも同じ値を登録する。
 
 ### 3. 起動
 
