@@ -3,7 +3,8 @@
     "id": "deploy",
     "execute-command": "{{ getenv `HOST_WEBHOOK_DIR` }}/deploy.sh",
     "command-working-directory": "{{ getenv `HOST_WEBHOOK_DIR` }}",
-    "response-message": "deploy triggered",
+    "include-command-output-in-response": true,
+    "include-command-output-in-response-on-error": true,
     "trigger-rule": {
       "match": {
         "type": "value",
