@@ -41,10 +41,17 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 異なるため、`/infra` のような別名でマウントすると必ずどちらかが壊れる。
 
 解決策として、webhook コンテナに **ホストと全く同じ絶対パス**
-(`HOST_INFRA_DIR`) で infra ディレクトリをマウントしている。
-これにより `--project-directory` にも `-f` にも `env_file` にも
-同じ `${HOST_INFRA_DIR}` を渡せば、ホスト側・コンテナ側どちらの
-解決でも正しいファイルを指す。
+(`HOST_INFRA_DIR`, `HOST_WEBHOOK_DIR`) で infra ディレクトリを
+マウントしている。これにより `--project-directory` にも `-f` にも
+`env_file` にも同じパスを渡せば、ホスト側・コンテナ側どちらの解決でも
+正しいファイルを指す。
+
+`HOST_INFRA_DIR`/`HOST_WEBHOOK_DIR` は 2 箇所で必要になる:
+- `webhook/.env`: docker compose の YAML 内変数展開用 (volumes の
+  マウント元パスなど)
+- コンテナ内の環境変数: `deploy.sh` や `hooks.json` の
+  `{{ getenv }}` から参照するため、`docker-compose.yaml` の
+  `environment:` で明示的にコンテナへ渡している
 
 ## セットアップ
 
@@ -61,7 +68,6 @@ Cloudflare Zero Trust ダッシュボード (Networks > Tunnels) で、
 
 ```
 DEPLOY_SECRET=<十分に長いランダム文字列>
-HOST_INFRA_DIR=<ホスト上の infra リポジトリの絶対パス (例: /root/dorossii/infra)>
 ```
 
 `DEPLOY_SECRET` は GitHub 側 (backend リポジトリ) の Secrets

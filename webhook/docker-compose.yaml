@@ -11,6 +11,9 @@ services:
     env_file:
       - path: ${HOST_INFRA_DIR}/config/webhook.env
         required: true
+    environment:
+      HOST_INFRA_DIR: ${HOST_INFRA_DIR}
+      HOST_WEBHOOK_DIR: ${HOST_WEBHOOK_DIR}
     volumes:
       - ${HOST_WEBHOOK_DIR}/hooks.json:/etc/webhook/hooks.json:ro
       - ${HOST_WEBHOOK_DIR}/deploy.sh:${HOST_WEBHOOK_DIR}/deploy.sh:ro
