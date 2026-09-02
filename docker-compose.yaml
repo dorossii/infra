@@ -56,7 +56,7 @@ services:
     hostname: webhook
     restart: always
     ports:
-      - 127.0.0.1:9000:9000
+      - 0.0.0.0:9000:9000
     env_file:
       - path: ./config/webhook.env
         required: false
