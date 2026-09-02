@@ -7,7 +7,7 @@
     "trigger-rule": {
       "match": {
         "type": "value",
-        "value": "{{ getenv \"DEPLOY_SECRET\" }}",
+        "value": "{{ getenv `DEPLOY_SECRET` }}",
         "parameter": {
           "source": "header",
           "name": "X-Deploy-Secret"
