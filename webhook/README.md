@@ -27,29 +27,24 @@ GitHub Actions からこの webhook を叩いて Debian サーバー上のコン
 実行中のプロセスが強制終了して他サービスの更新が中断されてしまうため。
 
 `webhook` コンテナは docker.sock をマウントしてホストの docker compose を
-操作しているが、パスの扱いに 2 つの罠がある。
+操作しているが、パスの扱いに罠がある。
 
-1. **bind mount の相対パス解決はホスト側 (Docker daemon) が行う。**
-   `./nginx/keys` のような相対パスは、docker compose を実行した
-   カレントディレクトリ (`--project-directory`) を基準に、
-   **ホスト上のパスとして** 解決される。ここにコンテナ内パス
-   (`/infra`) を渡すと、ホスト上に存在しない空ディレクトリが
-   新規作成されて nginx の設定・証明書が読み込めなくなる。
-2. **`-f` (compose ファイル自体の読み込み) は docker compose CLI
-   プロセスの視点で行われる。** この CLI は webhook コンテナ内で
-   動いているので、`-f` にはコンテナ内パス (`/infra/docker-compose.yaml`)
-   を渡す必要がある。ここにホストパスを渡すと
-   `stat: no such file or directory` で失敗する。
+- **bind mount の相対パス解決はホスト側 (Docker daemon) が行う。**
+  `./nginx/keys` のような相対パスは `--project-directory` を基準に
+  **ホスト上のパスとして** 解決される。
+- **`-f` (compose ファイル読み込み) や `env_file` の読み込みは
+  docker compose CLI プロセス自身 (webhook コンテナ内) が行う。**
+  そのためこれらのパスは **webhook コンテナから見えるパス** で
+  なければならない。
 
-そのため `deploy.sh` では `HOST_INFRA_DIR` (ホスト上の infra
-リポジトリの絶対パス) を明示し、
+この 2 つが同じパス文字列を要求するにも関わらず基準(ホスト/コンテナ)が
+異なるため、`/infra` のような別名でマウントすると必ずどちらかが壊れる。
 
-```
-docker compose --project-directory ${HOST_INFRA_DIR} -f /infra/docker-compose.yaml
-```
-
-という組み合わせで実行している
-(`--project-directory` はホストパス、`-f` はコンテナ内パス)。
+解決策として、webhook コンテナに **ホストと全く同じ絶対パス**
+(`HOST_INFRA_DIR`) で infra ディレクトリをマウントしている。
+これにより `--project-directory` にも `-f` にも `env_file` にも
+同じ `${HOST_INFRA_DIR}` を渡せば、ホスト側・コンテナ側どちらの
+解決でも正しいファイルを指す。
 
 ## セットアップ
 
@@ -62,7 +57,7 @@ Cloudflare Zero Trust ダッシュボード (Networks > Tunnels) で、
 | --- | --- |
 | `deploy-dorossii.mattuu.com` | `http://192.168.10.33:9000` |
 
-### 2. config/webhook.env を作成
+### 2. config/webhook.env を作成 (コンテナ実行時の環境変数)
 
 ```
 DEPLOY_SECRET=<十分に長いランダム文字列>
@@ -72,14 +67,26 @@ HOST_INFRA_DIR=<ホスト上の infra リポジトリの絶対パス (例: /root
 `DEPLOY_SECRET` は GitHub 側 (backend リポジトリ) の Secrets
 `DEPLOY_WEBHOOK_SECRET` にも同じ値を登録する。
 
-### 3. 起動
+### 3. webhook/.env を作成 (docker compose 自体の変数展開用)
+
+`webhook/.env.example` を参考に、`webhook/.env` を作成する。
+`HOST_INFRA_DIR` と `HOST_WEBHOOK_DIR` はホスト上の絶対パスと
+完全に一致させる必要がある (ホストと同じパスでコンテナに
+マウントするため)。
+
+```
+HOST_INFRA_DIR=/root/dorossii/infra
+HOST_WEBHOOK_DIR=/root/dorossii/infra/webhook
+```
+
+### 4. 起動
 
 ```
 cd webhook
 docker compose up -d
 ```
 
-### 4. 動作確認
+### 5. 動作確認
 
 ```
 curl -X POST https://deploy-dorossii.mattuu.com/hooks/deploy \

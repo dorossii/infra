@@ -1,8 +1,8 @@
 [
   {
     "id": "deploy",
-    "execute-command": "/scripts/deploy.sh",
-    "command-working-directory": "/scripts",
+    "execute-command": "{{ getenv `HOST_WEBHOOK_DIR` }}/deploy.sh",
+    "command-working-directory": "{{ getenv `HOST_WEBHOOK_DIR` }}",
     "response-message": "deploy triggered",
     "trigger-rule": {
       "match": {

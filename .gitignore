@@ -3,6 +3,7 @@ config/app.env
 config/webhook.env
 config/cloudflared.env
 config/infra_pat.env
+webhook/.env
 nginx/keys/
 openssl/jwtKeys/
 auth/icons/
