@@ -18,7 +18,7 @@ services:
 
   app:
     hostname: app
-    image: ghcr.io/dorossii/backend:2026-0902-1125
+    image: ghcr.io/dorossii/backend:2026-0902-1151
     env_file:
       - path: ./config/app.env
         required: false
